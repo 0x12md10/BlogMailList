@@ -25,6 +25,8 @@ app.post("/post" ,async (req,res,next)=> {
     try {
         const {email} = req.body;
 
+        const findUser = await MailList.findOne({email})
+
         const validateSchema = zod.object({
             email : zod.string().email().min(7 , "email can't be less than 7 characters").max(50,"Email can't be more than 50 characters long"),
     
@@ -38,7 +40,11 @@ app.post("/post" ,async (req,res,next)=> {
     
         const origin  = req.headers.origin ? req.headers.origin : "" ;
         const userAgent = req.headers['user-agent'] ? req.headers['user-agent'] : "";
-    
+        
+        if(findUser) {
+            return res.status(200).json({msg : "You're already subscribed"});
+        }
+
         await MailList.create({email,origin, userAgent});
     
         res.status(201).json({res : "You're subscribed."})
