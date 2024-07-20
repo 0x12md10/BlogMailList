@@ -10,32 +10,48 @@ const zod = require("zod");
 
 app.use(helmet());
 app.use(cors())
-app.use(express.json())
-
-app.post("/post" ,async (req,res)=> {
-    const {email} = req.body;
+app.use(express.json());
 
 
-
-    const validateSchema = zod.object({
-        email : zod.string().email().min(7 , "email can't be less than 7 characters").max(50,"Email can't be more than 50 characters long"),
-
-    })
-
-    const result = validateSchema.safeParse({email});
-
-    if(!result.success) {
-        return res.status(400).json({err : result.error.issues[0].message})
+app.get("/" , (req,res,next)=> {
+    try {
+        res.status(200).json({res : "get/"})
+    } catch (error) {
+        next(error)
     }
-
-    const origin  = req.headers.origin ? req.headers.origin : "" ;
-    const userAgent = req.headers['user-agent'] ? req.headers['user-agent'] : "";
-
-    await MailList.create({email,origin, userAgent});
-
-    res.status(201).json({res : "You're subscribed."})
 })
 
+app.post("/post" ,async (req,res,next)=> {
+    try {
+        const {email} = req.body;
+
+        const validateSchema = zod.object({
+            email : zod.string().email().min(7 , "email can't be less than 7 characters").max(50,"Email can't be more than 50 characters long"),
+    
+        })
+    
+        const result = validateSchema.safeParse({email});
+    
+        if(!result.success) {
+            return res.status(400).json({err : result.error.issues[0].message})
+        }
+    
+        const origin  = req.headers.origin ? req.headers.origin : "" ;
+        const userAgent = req.headers['user-agent'] ? req.headers['user-agent'] : "";
+    
+        await MailList.create({email,origin, userAgent});
+    
+        res.status(201).json({res : "You're subscribed."})
+        
+    } catch (error) {
+        next(error)
+    }
+})
+
+
+app.use((err,req,res,next)=> {
+    res.status(500).json({err : err.message})
+})
 
 
 mongoose.connection.once("connected" , ()=> {
